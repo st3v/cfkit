@@ -38,3 +38,17 @@ func ServiceWithTag(tag string) (*rabbit, error) {
 
 	return &rabbit{uri}, nil
 }
+
+func ServiceWithName(name string) (*rabbit, error) {
+	srv, err := service.WithName(name)
+	if err != nil {
+		return nil, err
+	}
+
+	uri, err := URI(srv)
+	if err != nil {
+		return nil, err
+	}
+
+	return &rabbit{uri}, nil
+}

@@ -17,7 +17,39 @@ type Service struct {
 	Credentials map[string]interface{} `json:"credentials"`
 }
 
+func WithTag(tag string) (Service, error) {
+	m, err := loadMap()
+	if err != nil {
+		return Service{}, err
+	}
+
+	return m.withTag(tag)
+}
+
+func WithName(name string) (Service, error) {
+	m, err := loadMap()
+	if err != nil {
+		return Service{}, err
+	}
+
+	return m.withName(name)
+}
+
 type serviceMap map[string][]Service
+
+func loadMap() (serviceMap, error) {
+	jsonStr := os.Getenv(envVarName)
+	if jsonStr == "" {
+		return serviceMap{}, fmt.Errorf("%s not set", envVarName)
+	}
+
+	m := new(serviceMap)
+	if err := json.Unmarshal([]byte(jsonStr), m); err != nil {
+		return serviceMap{}, err
+	}
+
+	return *m, nil
+}
 
 func (m serviceMap) withTag(tag string) (Service, error) {
 	for _, services := range m {
@@ -32,16 +64,13 @@ func (m serviceMap) withTag(tag string) (Service, error) {
 	return Service{}, fmt.Errorf("Service with tag '%s' not found", tag)
 }
 
-func WithTag(tag string) (Service, error) {
-	jsonStr := os.Getenv(envVarName)
-	if jsonStr == "" {
-		return Service{}, fmt.Errorf("%s not set", envVarName)
+func (m serviceMap) withName(name string) (Service, error) {
+	for _, services := range m {
+		for _, service := range services {
+			if strings.ToUpper(name) == strings.ToUpper(service.Name) {
+				return service, nil
+			}
+		}
 	}
-
-	m := new(serviceMap)
-	if err := json.Unmarshal([]byte(jsonStr), m); err != nil {
-		return Service{}, err
-	}
-
-	return m.withTag(tag)
+	return Service{}, fmt.Errorf("Service with name '%s' not found", name)
 }

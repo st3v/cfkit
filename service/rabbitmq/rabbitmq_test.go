@@ -40,18 +40,38 @@ var _ = Describe("rabbitmq", func() {
 
 	Describe(".ServiceWithTag", func() {
 		It("does not return an error", func() {
-			_, err := ServiceWithTag("my-rabbit")
+			_, err := ServiceWithTag("my-rabbit-tag")
 			Expect(err).ToNot(HaveOccurred())
 		})
 
 		It("correctly initializes the amqp URI", func() {
-			rabbit, _ := ServiceWithTag("my-rabbit")
+			rabbit, _ := ServiceWithTag("my-rabbit-tag")
 			Expect(rabbit.uri).To(Equal("amqp://my-rabbit"))
 		})
 
 		Context("when service is not found", func() {
 			It("returns an error", func() {
 				_, err := ServiceWithTag("unknown")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("not found"))
+			})
+		})
+	})
+
+	Describe(".ServiceWithName", func() {
+		It("does not return an error", func() {
+			_, err := ServiceWithName("my-rabbit-name")
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("correctly initializes the amqp URI", func() {
+			rabbit, _ := ServiceWithName("my-rabbit-name")
+			Expect(rabbit.uri).To(Equal("amqp://my-rabbit"))
+		})
+
+		Context("when service is not found", func() {
+			It("returns an error", func() {
+				_, err := ServiceWithName("unknown")
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("not found"))
 			})
@@ -259,9 +279,9 @@ var vcapServices = `
 			 } 
 			},
 			"label": "user-provided",
-			"name": "rabbit",
+			"name": "my-rabbit-name",
 			"syslog_drain_url": "",
-			"tags": ["my-rabbit"]
+			"tags": ["my-rabbit-tag"]
 		 }
 	  ]
 	}
