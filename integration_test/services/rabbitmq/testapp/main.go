@@ -20,20 +20,21 @@ var rabbit rabbitmq.RabbitService
 func main() {
 	var err error
 	if rabbit, err = rabbitmq.Service(); err != nil {
-		log.Fatalf("Error getting RabbitMQ service: %s", err)
+		log.Printf("Error getting RabbitMQ service: %s", err)
+		os.Exit(-1)
 	}
 
 	router := mux.NewRouter()
 	router.HandleFunc("/", getMessageHandler).Methods("GET")
-	router.HandleFunc("/", putMessageHandler).Methods("PUT")
+	router.HandleFunc("/", postMessageHandler).Methods("POST")
 
 	http.Handle("/", router)
 
 	addr := fmt.Sprintf(":%s", os.Getenv("PORT"))
-	log.Fatal(http.ListenAndServe(addr, nil))
+	log.Print(http.ListenAndServe(addr, nil))
 }
 
-func putMessageHandler(rw http.ResponseWriter, req *http.Request) {
+func postMessageHandler(rw http.ResponseWriter, req *http.Request) {
 	defer req.Body.Close()
 	body, err := ioutil.ReadAll(req.Body)
 	if err != nil {
