@@ -312,18 +312,12 @@ var vcapServices = `
 			]
 		 }
 		],
-		"user-provided": [
+		"cloudamqp-dev": [
 		 {
 			"credentials": {
-			 "protocols": {
-				"amqp": {
-					"uris": [
-						"amqp://my-rabbit"
-					]
-				}
-			 } 
+				"uri": "amqp://my-rabbit"
 			},
-			"label": "user-provided",
+			"label": "cloudamqp-dev",
 			"name": "my-rabbit-name",
 			"syslog_drain_url": "",
 			"tags": ["my-rabbit-tag"]

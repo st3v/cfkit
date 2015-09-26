@@ -9,5 +9,5 @@ import (
 
 func TestRabbitmq(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Rabbitmq Suite")
+	RunSpecs(t, "RabbitMQ Suite")
 }

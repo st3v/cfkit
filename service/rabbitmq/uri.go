@@ -2,11 +2,21 @@ package rabbitmq
 
 import (
 	"errors"
+	"strings"
 
 	"github.com/st3v/cfkit/service"
 )
 
 var URI = func(s service.Service) (string, error) {
+	switch s.Label {
+	case "p-rabbitmq":
+		return pRabbitURI(s)
+	default:
+		return simpleURI(s)
+	}
+}
+
+func pRabbitURI(s service.Service) (string, error) {
 	protos, ok := s.Credentials["protocols"].(map[string]interface{})
 	if !ok {
 		return "", errors.New("Invalid service credentials")
@@ -27,5 +37,13 @@ var URI = func(s service.Service) (string, error) {
 		return "", errors.New("Invalid AMQP URI")
 	}
 
+	return uri, nil
+}
+
+func simpleURI(s service.Service) (string, error) {
+	uri, ok := s.Credentials["uri"].(string)
+	if !ok || !strings.HasPrefix(uri, "amqp://") {
+		return "", errors.New("Invalid AMQP URI")
+	}
 	return uri, nil
 }
