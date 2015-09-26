@@ -6,6 +6,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/st3v/cfkit/service"
 	"github.com/streadway/amqp"
 )
 
@@ -56,6 +57,28 @@ var _ = Describe("rabbitmq", func() {
 				Expect(err.Error()).To(ContainSubstring("not found"))
 			})
 		})
+
+		Context("when getting the URI fails", func() {
+			var (
+				origURI     = URI
+				expectedErr = errors.New("expected")
+			)
+
+			BeforeEach(func() {
+				URI = func(s service.Service) (string, error) {
+					return "", expectedErr
+				}
+			})
+
+			AfterEach(func() {
+				URI = origURI
+			})
+
+			It("returns the epected error", func() {
+				_, err := ServiceWithTag("my-rabbit-tag")
+				Expect(err).To(Equal(expectedErr))
+			})
+		})
 	})
 
 	Describe(".ServiceWithName", func() {
@@ -74,6 +97,28 @@ var _ = Describe("rabbitmq", func() {
 				_, err := ServiceWithName("unknown")
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(ContainSubstring("not found"))
+			})
+		})
+
+		Context("when getting the URI fails", func() {
+			var (
+				origURI     = URI
+				expectedErr = errors.New("expected")
+			)
+
+			BeforeEach(func() {
+				URI = func(s service.Service) (string, error) {
+					return "", expectedErr
+				}
+			})
+
+			AfterEach(func() {
+				URI = origURI
+			})
+
+			It("returns the epected error", func() {
+				_, err := ServiceWithName("my-rabbit-name")
+				Expect(err).To(Equal(expectedErr))
 			})
 		})
 	})

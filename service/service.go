@@ -45,7 +45,7 @@ func loadMap() (serviceMap, error) {
 
 	m := new(serviceMap)
 	if err := json.Unmarshal([]byte(jsonStr), m); err != nil {
-		return serviceMap{}, err
+		return serviceMap{}, fmt.Errorf("Error parsing %s: %s", envVarName, err)
 	}
 
 	return *m, nil

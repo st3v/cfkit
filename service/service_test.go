@@ -40,6 +40,30 @@ var _ = Describe("service", func() {
 				Expect(err.Error()).To(Equal("Service with tag 'unknown' not found"))
 			})
 		})
+
+		Context("when VCAP_SERVICES is not set", func() {
+			BeforeEach(func() {
+				os.Setenv("VCAP_SERVICES", "")
+			})
+
+			It("returns an error", func() {
+				_, err := service.WithTag("service")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("VCAP_SERVICES not set"))
+			})
+		})
+
+		Context("when VCAP_SERVICES can NOT be unmarshalled", func() {
+			BeforeEach(func() {
+				os.Setenv("VCAP_SERVICES", "INVALID")
+			})
+
+			It("returns an error", func() {
+				_, err := service.WithTag("service")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Error parsing VCAP_SERVICES"))
+			})
+		})
 	})
 
 	Describe(".WithName", func() {
@@ -67,6 +91,30 @@ var _ = Describe("service", func() {
 				_, err := service.WithName("unknown")
 				Expect(err).To(HaveOccurred())
 				Expect(err.Error()).To(Equal("Service with name 'unknown' not found"))
+			})
+		})
+
+		Context("when VCAP_SERVICES is not set", func() {
+			BeforeEach(func() {
+				os.Setenv("VCAP_SERVICES", "")
+			})
+
+			It("returns an error", func() {
+				_, err := service.WithName("service")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("VCAP_SERVICES not set"))
+			})
+		})
+
+		Context("when VCAP_SERVICES can NOT be unmarshalled", func() {
+			BeforeEach(func() {
+				os.Setenv("VCAP_SERVICES", "INVALID")
+			})
+
+			It("returns an error", func() {
+				_, err := service.WithName("service")
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(ContainSubstring("Error parsing VCAP_SERVICES"))
 			})
 		})
 	})
