@@ -14,6 +14,10 @@
 			"ImportPath": "github.com/onsi/gomega",
 			"Comment": "v1.0-57-g52a4c33",
 			"Rev": "52a4c3399a2cf61ef1d0babd6591b8b3461e749d"
+		},
+		{
+			"ImportPath": "github.com/streadway/amqp",
+			"Rev": "79beb307dcf5904fb8cb061276f1c14f222012c2"
 		}
 	]
 }
