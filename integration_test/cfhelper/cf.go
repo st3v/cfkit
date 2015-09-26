@@ -12,7 +12,7 @@ const cli = "cf"
 
 func TargetOrg(org string) error {
 	cmd := exec.Command(cli, "target", "-o", org)
-	return runCommand(cmd, "Error targetting org")
+	return runCommand(cmd, "Error targeting org")
 }
 
 func CreateSpace(space string) error {
@@ -22,7 +22,7 @@ func CreateSpace(space string) error {
 
 func TargetSpace(space string) error {
 	cmd := exec.Command(cli, "target", "-s", space)
-	return runCommand(cmd, "Error targetting space")
+	return runCommand(cmd, "Error targeting space")
 }
 
 func DeleteSpace(space string) error {

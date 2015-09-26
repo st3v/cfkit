@@ -15,13 +15,12 @@ import (
 
 const queueName = "testapp"
 
-var rabbit rabbitmq.RabbitService
+var rabbit *rabbitmq.Svc
 
 func main() {
 	var err error
 	if rabbit, err = rabbitmq.Service(); err != nil {
-		log.Printf("Error getting RabbitMQ service: %s", err)
-		os.Exit(-1)
+		log.Fatalf("Error getting RabbitMQ service: %s", err)
 	}
 
 	router := mux.NewRouter()
@@ -31,7 +30,7 @@ func main() {
 	http.Handle("/", router)
 
 	addr := fmt.Sprintf(":%s", os.Getenv("PORT"))
-	log.Print(http.ListenAndServe(addr, nil))
+	log.Fatal(http.ListenAndServe(addr, nil))
 }
 
 func postMessageHandler(rw http.ResponseWriter, req *http.Request) {
