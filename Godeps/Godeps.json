@@ -1,0 +1,19 @@
+{
+	"ImportPath": "github.com/st3v/cfkit",
+	"GoVersion": "go1.5.1",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/onsi/ginkgo",
+			"Comment": "v1.2.0-14-g1b59c57",
+			"Rev": "1b59c57df76ede42c08590546916e6a18685857d"
+		},
+		{
+			"ImportPath": "github.com/onsi/gomega",
+			"Comment": "v1.0-57-g52a4c33",
+			"Rev": "52a4c3399a2cf61ef1d0babd6591b8b3461e749d"
+		}
+	]
+}
