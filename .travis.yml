@@ -7,12 +7,15 @@ before_install:
 - docker images
 - docker ps -a
 script:
-- docker run --rm -e CF_API -e CF_DOMAIN -e CF_USERNAME -e CF_PASSWORD -e CF_ORG -e
-  CF_RABBIT_SERVICE_NAME -e CF_RABBIT_SERVICE_PLAN -e COVERALLS_TOKEN st3v/cfkit-test
-  /bin/sh -c "ginkgo -r --race -randomizeAllSpecs -cover && find ./Godeps -name *.coverprofile
-  -type f -delete && find ./integration_test -name *.coverprofile -type f -delete
-  && gover . && goveralls -service travis-ci -coverprofile=gover.coverprofile -repotoken
-  $COVERALLS_TOKEN"
+- docker run --rm -e CF_API -e CF_DOMAIN -e CF_USERNAME -e CF_PASSWORD -e CF_ORG
+  -e CF_RABBIT_SERVICE_NAME -e CF_RABBIT_SERVICE_PLAN -e COVERALLS_TOKEN -e TRAVIS_BRANCH
+  -e TRAVIS_BUILD_ID -e TRAVIS_BUILD_NUMBER -e TRAVIS_COMMIT -e TRAVIS_COMMIT_RANGE
+  -e TRAVIS_JOB_ID -e TRAVIS_JOB_NUMBER -e TRAVIS_PULL_REQUEST -e TRAVIS_REPO_SLUG
+  -e TRAVIS_OS_NAME -e TRAVIS_TAG -e TRAVIS st3v/cfkit-test /bin/sh -c "ginkgo -r
+  --race -randomizeAllSpecs -cover && find ./Godeps -name *.coverprofile -type f
+  -delete && find ./integration_test -name *.coverprofile -type f -delete &&
+  gover . && goveralls -service=travis-ci -coverprofile=gover.coverprofile
+  -repotoken=$COVERALLS_TOKEN"
 after_script:
 - docker rmi -f st3v/cfkit-test
 - docker images
