@@ -22,7 +22,7 @@ var _ = Describe(".Rabbit", func() {
 
 	It("correctly initializes the amqp URI", func() {
 		rabbit, _ := Rabbit()
-		Expect(rabbit.uri).To(Equal("amqp://username:password@127.0.0.1:5672/instance"))
+		Expect(rabbit.uri).To(Equal("amqp://username:password@127.0.0.1/instance"))
 	})
 
 	Context("when service is not found", func() {
@@ -63,18 +63,18 @@ var _ = Describe(".RabbitWithTag", func() {
 
 	Context("when getting the URI fails", func() {
 		var (
-			origFn      = rabbitFromService
+			origLift    = serviceLift
 			expectedErr = errors.New("expected")
 		)
 
 		BeforeEach(func() {
-			rabbitFromService = func(s env.Service) (*RabbitMQ, error) {
+			serviceLift = func(s env.Service) (*RabbitMQ, error) {
 				return nil, expectedErr
 			}
 		})
 
 		AfterEach(func() {
-			rabbitFromService = origFn
+			serviceLift = origLift
 		})
 
 		It("returns the epected error", func() {
@@ -109,18 +109,18 @@ var _ = Describe(".RabbitWithName", func() {
 
 	Context("when parsing the service credentials fails", func() {
 		var (
-			origFn      = rabbitFromService
+			origLift    = serviceLift
 			expectedErr = errors.New("expected")
 		)
 
 		BeforeEach(func() {
-			rabbitFromService = func(env.Service) (*RabbitMQ, error) {
+			serviceLift = func(s env.Service) (*RabbitMQ, error) {
 				return nil, expectedErr
 			}
 		})
 
 		AfterEach(func() {
-			rabbitFromService = origFn
+			serviceLift = origLift
 		})
 
 		It("returns the epected error", func() {
@@ -198,218 +198,65 @@ var _ = Describe("rabbitmq", func() {
 		})
 	})
 
-	Describe(".rabbitFromService", func() {
+	Describe(".FromService", func() {
 		var svc env.Service
 
-		Context("when the service is labeled p-rabbitmq", func() {
+		BeforeEach(func() {
+			svc = env.Service{
+				Label: "prabbit",
+				Credentials: map[string]interface{}{
+					"uri": "amqp://uri",
+				},
+			}
+		})
+
+		It("does not return an error", func() {
+			_, err := FromService(svc)
+			Expect(err).ToNot(HaveOccurred())
+		})
+
+		It("uses the correct URI", func() {
+			rabbit, _ := FromService(svc)
+			Expect(rabbit.uri).To(Equal("amqp://uri"))
+		})
+
+		Context("when service credentials do NOT contain URI", func() {
 			BeforeEach(func() {
-				protos := map[string]interface{}{
-					"amqp": map[string]interface{}{
-						"uri": "amqp://uri",
-					},
-				}
-
-				svc = env.Service{
-					Label: "p-rabbitmq",
-					Credentials: map[string]interface{}{
-						"protocols": protos,
-					},
-				}
+				svc.Credentials = map[string]interface{}{}
 			})
 
-			It("does not return an error", func() {
-				_, err := rabbitFromService(svc)
-				Expect(err).ToNot(HaveOccurred())
-			})
-
-			It("uses the correct URI", func() {
-				rabbit, _ := rabbitFromService(svc)
-				Expect(rabbit.uri).To(Equal("amqp://uri"))
-			})
-
-			Context("when service protocols field is missing", func() {
-				BeforeEach(func() {
-					svc.Credentials = map[string]interface{}{}
-				})
-
-				It("returns expected error", func() {
-					_, err := rabbitFromService(svc)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("Invalid service credentials"))
-				})
-			})
-
-			Context("when protocols field is of an invalid type", func() {
-				BeforeEach(func() {
-					svc.Credentials = map[string]interface{}{
-						"protocols": false,
-					}
-				})
-
-				It("returns expected error", func() {
-					_, err := rabbitFromService(svc)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("Invalid service credentials"))
-				})
-			})
-
-			Context("when amqp protocol is missing", func() {
-				BeforeEach(func() {
-					protos := map[string]interface{}{
-						"foo": map[string]interface{}{
-							"bar": false,
-						},
-					}
-
-					svc.Credentials = map[string]interface{}{
-						"protocols": protos,
-					}
-				})
-
-				It("returns expected error", func() {
-					_, err := rabbitFromService(svc)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("Invalid AMQP protocol credentials"))
-				})
-			})
-
-			Context("when the amqp field is of an invalid type", func() {
-				BeforeEach(func() {
-					protos := map[string]interface{}{
-						"amqp": false,
-					}
-
-					svc.Credentials = map[string]interface{}{
-						"protocols": protos,
-					}
-				})
-
-				It("returns expected error", func() {
-					_, err := rabbitFromService(svc)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("Invalid AMQP protocol credentials"))
-				})
-			})
-
-			Context("when amqp uris field is missing", func() {
-				BeforeEach(func() {
-					protos := map[string]interface{}{
-						"amqp": map[string]interface{}{
-							"bar": false,
-						},
-					}
-
-					svc.Credentials = map[string]interface{}{
-						"protocols": protos,
-					}
-				})
-
-				It("returns expected error", func() {
-					_, err := rabbitFromService(svc)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("Invalid AMQP URI"))
-				})
-			})
-
-			Context("when amqp uris array is empty", func() {
-				BeforeEach(func() {
-					protos := map[string]interface{}{
-						"amqp": map[string]interface{}{
-							"uris": []interface{}{},
-						},
-					}
-
-					svc.Credentials = map[string]interface{}{
-						"protocols": protos,
-					}
-				})
-
-				It("returns expected error", func() {
-					_, err := rabbitFromService(svc)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("Invalid AMQP URI"))
-				})
-			})
-
-			Context("when amqp uri is an empty string", func() {
-				BeforeEach(func() {
-					protos := map[string]interface{}{
-						"amqp": map[string]interface{}{
-							"uris": []interface{}{""},
-						},
-					}
-
-					svc.Credentials = map[string]interface{}{
-						"protocols": protos,
-					}
-				})
-
-				It("returns expected error", func() {
-					_, err := rabbitFromService(svc)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("Invalid AMQP URI"))
-				})
+			It("returns expected error", func() {
+				_, err := FromService(svc)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("Invalid AMQP URI"))
 			})
 		})
 
-		Context("when the service is NOT labeled p-rabbitmq", func() {
+		Context("when service URI is empty", func() {
 			BeforeEach(func() {
-				svc = env.Service{
-					Label: "cloudamqp",
-					Credentials: map[string]interface{}{
-						"uri": "amqp://uri",
-					},
+				svc.Credentials = map[string]interface{}{
+					"uri": "",
 				}
 			})
 
-			It("does not return an error", func() {
-				_, err := rabbitFromService(svc)
-				Expect(err).ToNot(HaveOccurred())
+			It("returns expected error", func() {
+				_, err := FromService(svc)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("Invalid AMQP URI"))
+			})
+		})
+
+		Context("when service URI does not specify amqp protocol", func() {
+			BeforeEach(func() {
+				svc.Credentials = map[string]interface{}{
+					"uri": "http://foo.bar",
+				}
 			})
 
-			It("uses the correct URI", func() {
-				rabbit, _ := rabbitFromService(svc)
-				Expect(rabbit.uri).To(Equal("amqp://uri"))
-			})
-
-			Context("when service credentials do NOT contain URI", func() {
-				BeforeEach(func() {
-					svc.Credentials = map[string]interface{}{}
-				})
-
-				It("returns expected error", func() {
-					_, err := rabbitFromService(svc)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("Invalid AMQP URI"))
-				})
-			})
-
-			Context("when service URI is empty", func() {
-				BeforeEach(func() {
-					svc.Credentials = map[string]interface{}{
-						"uri": "",
-					}
-				})
-
-				It("returns expected error", func() {
-					_, err := rabbitFromService(svc)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("Invalid AMQP URI"))
-				})
-			})
-
-			Context("when service URI does not specify amqp protocol", func() {
-				BeforeEach(func() {
-					svc.Credentials = map[string]interface{}{
-						"uri": "http://foo.bar",
-					}
-				})
-
-				It("returns expected error", func() {
-					_, err := rabbitFromService(svc)
-					Expect(err).To(HaveOccurred())
-					Expect(err.Error()).To(Equal("Invalid AMQP URI"))
-				})
+			It("returns expected error", func() {
+				_, err := FromService(svc)
+				Expect(err).To(HaveOccurred())
+				Expect(err.Error()).To(Equal("Invalid AMQP URI"))
 			})
 		})
 	})

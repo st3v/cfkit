@@ -36,6 +36,16 @@ func RabbitWithName(name string) (*RabbitMQ, error) {
 	return find(env.ServiceWithName, name)
 }
 
+func FromService(svc env.Service) (*RabbitMQ, error) {
+	uri, ok := svc.Credentials["uri"].(string)
+	if !ok || !strings.HasPrefix(uri, "amqp://") {
+		return nil, errors.New("Invalid AMQP URI")
+	}
+	return &RabbitMQ{uri}, nil
+}
+
+var serviceLift = FromService
+
 type lookupFn func(string) (env.Service, error)
 
 func find(lookup lookupFn, id string) (*RabbitMQ, error) {
@@ -43,36 +53,5 @@ func find(lookup lookupFn, id string) (*RabbitMQ, error) {
 	if err != nil {
 		return nil, err
 	}
-	return rabbitFromService(svc)
-}
-
-var rabbitFromService = func(svc env.Service) (*RabbitMQ, error) {
-	switch svc.Label {
-	case "p-rabbitmq":
-		return pivotalRabbit(svc.Credentials)
-	default:
-		return stdRabbit(svc.Credentials)
-	}
-}
-
-func pivotalRabbit(creds map[string]interface{}) (*RabbitMQ, error) {
-	protos, ok := creds["protocols"].(map[string]interface{})
-	if !ok {
-		return nil, errors.New("Invalid service credentials")
-	}
-
-	amqpCreds, ok := protos["amqp"].(map[string]interface{})
-	if !ok {
-		return nil, errors.New("Invalid AMQP protocol credentials")
-	}
-
-	return stdRabbit(amqpCreds)
-}
-
-func stdRabbit(creds map[string]interface{}) (*RabbitMQ, error) {
-	uri, ok := creds["uri"].(string)
-	if !ok || !strings.HasPrefix(uri, "amqp://") {
-		return nil, errors.New("Invalid AMQP URI")
-	}
-	return &RabbitMQ{uri}, nil
+	return serviceLift(svc)
 }
