@@ -1,6 +1,7 @@
 package cfhelper
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
@@ -59,6 +60,16 @@ func DeleteApp(app string) error {
 func CreateService(serviceName, servicePlan, instanceID string) error {
 	cmd := exec.Command(cli, "create-service", serviceName, servicePlan, instanceID)
 	return runCommand(cmd, "Error creating service")
+}
+
+func CreateUserService(serviceName string, credentials map[string]interface{}) error {
+	payload, err := json.Marshal(credentials)
+	if err != nil {
+		return fmt.Errorf("Error marshalling service payload: %s", err)
+	}
+
+	cmd := exec.Command(cli, "cups", serviceName, "-p", string(payload))
+	return runCommand(cmd, "Error creating user provided service")
 }
 
 func BindService(appName, instanceID string) error {
