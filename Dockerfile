@@ -24,3 +24,10 @@ ENV GOPATH $GOPATH/src/github.com/st3v/cfkit/Godeps/_workspace:$GOPATH
 # install ginkgo
 RUN go install github.com/onsi/ginkgo/...
 
+# install necessary tools
+RUN go get golang.org/x/tools/cmd/cover
+RUN go get golang.org/x/tools/cmd/vet
+RUN go get github.com/golang/lint/golint
+RUN go get github.com/modocache/gover
+RUN go get github.com/mattn/goveralls
+
