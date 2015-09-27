@@ -4,5 +4,5 @@ instances: 1
 memory: 64M
 applications:
 - buildpack: go_buildpack
-  command: testapp
-  path: ../../../../
+  command: rabbit-test-app
+  path: ../../../

@@ -1,4 +1,4 @@
-package rabbitmq_test
+package service_test
 
 import (
 	"fmt"
@@ -9,32 +9,21 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+
 	cf "github.com/st3v/cfkit/integration_test/cfhelper"
 )
 
 var _ = Describe("RabbitMQ Service", func() {
 	var (
-		api         = cf.API()
-		username    = cf.Username()
-		password    = cf.Password()
-		org         = cf.Org()
-		space       = cf.RandomSpaceName()
 		app         = cf.RandomAppName()
+		route       = fmt.Sprintf("http://%s.%s", app, cf.Domain())
 		serviceID   = cf.RandomServiceID()
 		serviceName = cf.RabbitServiceName()
 		servicePlan = cf.RabbitServicePlan()
-		route       = fmt.Sprintf("http://%s.%s", app, cf.Domain())
 	)
 
-	BeforeSuite(func() {
-		Expect(cf.Login(api, username, password)).To(Succeed())
-
-		Expect(cf.TargetOrg(org)).To(Succeed())
-
-		Expect(cf.CreateSpace(space)).To(Succeed())
-		Expect(cf.TargetSpace(space)).To(Succeed())
-
-		manifestPath := filepath.Join(".", "testapp", "manifest.yml")
+	BeforeEach(func() {
+		manifestPath := filepath.Join(".", "rabbit-test-app", "manifest.yml")
 		Expect(cf.PushAppManifest(app, manifestPath)).To(Succeed())
 
 		Expect(cf.CreateService(
@@ -69,9 +58,8 @@ var _ = Describe("RabbitMQ Service", func() {
 		fmt.Fprintln(GinkgoWriter, "Message received")
 	})
 
-	AfterSuite(func() {
+	AfterEach(func() {
 		Expect(cf.DeleteApp(app)).To(Succeed())
 		Expect(cf.DeleteService(serviceID)).To(Succeed())
-		Expect(cf.DeleteSpace(space)).To(Succeed())
 	})
 })
