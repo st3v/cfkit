@@ -130,133 +130,129 @@ var _ = Describe(".RabbitWithName", func() {
 	})
 })
 
-var _ = Describe("rabbitmq", func() {
-	Describe("rabbit", func() {
-		Describe(".URI", func() {
-			It("returns the correct URI", func() {
-				r := &RabbitMQ{"uri"}
-				Expect(r.URI()).To(Equal("uri"))
-			})
+var _ = Describe(".RabbitFromService", func() {
+	var svc env.Service
+
+	BeforeEach(func() {
+		svc = env.Service{
+			Label: "prabbit",
+			Credentials: map[string]interface{}{
+				"uri": "amqp://uri",
+			},
+		}
+	})
+
+	It("does not return an error", func() {
+		_, err := RabbitFromService(svc)
+		Expect(err).ToNot(HaveOccurred())
+	})
+
+	It("uses the correct URI", func() {
+		rabbit, _ := RabbitFromService(svc)
+		Expect(rabbit.uri).To(Equal("amqp://uri"))
+	})
+
+	Context("when service credentials do NOT contain URI", func() {
+		BeforeEach(func() {
+			svc.Credentials = map[string]interface{}{}
 		})
 
-		Describe(".Dial", func() {
-			var (
-				dialedURI string
-
-				actualConn *amqp.Connection
-				actualErr  error
-
-				expectedConn *amqp.Connection
-				expectedErr  error
-
-				origDialer func(string) (*amqp.Connection, error)
-
-				testDialer = func(uri string) (*amqp.Connection, error) {
-					dialedURI = uri
-					return expectedConn, expectedErr
-				}
-			)
-
-			BeforeEach(func() {
-				expectedConn = new(amqp.Connection)
-				expectedErr = nil
-
-				origDialer = dialer
-				dialer = testDialer
-			})
-
-			AfterEach(func() {
-				dialer = origDialer
-			})
-
-			JustBeforeEach(func() {
-				rabbit := &RabbitMQ{"amqp://rabbit.uri"}
-				actualConn, actualErr = rabbit.Dial()
-			})
-
-			It("uses the correct amqp URI", func() {
-				Expect(dialedURI).To(Equal("amqp://rabbit.uri"))
-			})
-
-			It("returns the expected connection", func() {
-				Expect(actualConn).To(Equal(expectedConn))
-			})
-
-			It("returns no error", func() {
-				Expect(actualErr).ToNot(HaveOccurred())
-			})
-
-			Context("when the dialer fails", func() {
-				BeforeEach(func() {
-					expectedErr = errors.New("some-error")
-				})
-
-				It("returns the error", func() {
-					Expect(actualErr).To(Equal(expectedErr))
-				})
-			})
+		It("returns expected error", func() {
+			_, err := RabbitFromService(svc)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Invalid AMQP URI"))
 		})
 	})
 
-	Describe(".FromService", func() {
-		var svc env.Service
-
+	Context("when service URI is empty", func() {
 		BeforeEach(func() {
-			svc = env.Service{
-				Label: "prabbit",
-				Credentials: map[string]interface{}{
-					"uri": "amqp://uri",
-				},
+			svc.Credentials = map[string]interface{}{
+				"uri": "",
 			}
 		})
 
-		It("does not return an error", func() {
-			_, err := FromService(svc)
-			Expect(err).ToNot(HaveOccurred())
+		It("returns expected error", func() {
+			_, err := RabbitFromService(svc)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Invalid AMQP URI"))
+		})
+	})
+
+	Context("when service URI does not specify amqp protocol", func() {
+		BeforeEach(func() {
+			svc.Credentials = map[string]interface{}{
+				"uri": "http://foo.bar",
+			}
 		})
 
-		It("uses the correct URI", func() {
-			rabbit, _ := FromService(svc)
-			Expect(rabbit.uri).To(Equal("amqp://uri"))
+		It("returns expected error", func() {
+			_, err := RabbitFromService(svc)
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("Invalid AMQP URI"))
+		})
+	})
+})
+
+var _ = Describe("RabbitMQ", func() {
+	Describe(".URI", func() {
+		It("returns the correct URI", func() {
+			r := &RabbitMQ{"uri"}
+			Expect(r.URI()).To(Equal("uri"))
+		})
+	})
+
+	Describe(".Dial", func() {
+		var (
+			dialedURI string
+
+			actualConn *amqp.Connection
+			actualErr  error
+
+			expectedConn *amqp.Connection
+			expectedErr  error
+
+			origDialer = amqpDialer
+
+			testDialer = func(uri string) (*amqp.Connection, error) {
+				dialedURI = uri
+				return expectedConn, expectedErr
+			}
+		)
+
+		BeforeEach(func() {
+			expectedConn = new(amqp.Connection)
+			expectedErr = nil
+			amqpDialer = testDialer
 		})
 
-		Context("when service credentials do NOT contain URI", func() {
+		AfterEach(func() {
+			amqpDialer = origDialer
+		})
+
+		JustBeforeEach(func() {
+			rabbit := &RabbitMQ{"amqp://rabbit.uri"}
+			actualConn, actualErr = rabbit.Dial()
+		})
+
+		It("uses the correct amqp URI", func() {
+			Expect(dialedURI).To(Equal("amqp://rabbit.uri"))
+		})
+
+		It("returns the expected connection", func() {
+			Expect(actualConn).To(Equal(expectedConn))
+		})
+
+		It("returns no error", func() {
+			Expect(actualErr).ToNot(HaveOccurred())
+		})
+
+		Context("when the dialer fails", func() {
 			BeforeEach(func() {
-				svc.Credentials = map[string]interface{}{}
+				expectedErr = errors.New("some-error")
 			})
 
-			It("returns expected error", func() {
-				_, err := FromService(svc)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("Invalid AMQP URI"))
-			})
-		})
-
-		Context("when service URI is empty", func() {
-			BeforeEach(func() {
-				svc.Credentials = map[string]interface{}{
-					"uri": "",
-				}
-			})
-
-			It("returns expected error", func() {
-				_, err := FromService(svc)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("Invalid AMQP URI"))
-			})
-		})
-
-		Context("when service URI does not specify amqp protocol", func() {
-			BeforeEach(func() {
-				svc.Credentials = map[string]interface{}{
-					"uri": "http://foo.bar",
-				}
-			})
-
-			It("returns expected error", func() {
-				_, err := FromService(svc)
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(Equal("Invalid AMQP URI"))
+			It("returns the error", func() {
+				Expect(actualErr).To(Equal(expectedErr))
 			})
 		})
 	})
