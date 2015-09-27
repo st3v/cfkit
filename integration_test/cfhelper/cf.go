@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os/exec"
 	"strings"
+	"time"
 )
 
 const cli = "cf"
@@ -101,10 +102,14 @@ func runCommand(cmd *exec.Cmd, errMsg string) error {
 }
 
 func randID() string {
+	rand.Seed(time.Now().UTC().UnixNano())
+
 	chars := []byte("abcdefghijklmnopqrstuvwxyz0123456789")
 	result := make([]byte, 7)
+
 	for i, _ := range result {
 		result[i] = chars[rand.Intn(len(chars))]
 	}
+
 	return string(result)
 }
