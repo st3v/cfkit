@@ -14,6 +14,10 @@ var _ = Describe(".ServiceWithTag", func() {
 		os.Setenv("VCAP_SERVICES", vcapServices)
 	})
 
+	AfterEach(func() {
+		os.Unsetenv("VCAP_SERVICES")
+	})
+
 	Context("when the service is defined", func() {
 		It("does NOT return an error", func() {
 			_, err := env.ServiceWithTag("service-tag-2")
@@ -43,7 +47,7 @@ var _ = Describe(".ServiceWithTag", func() {
 
 	Context("when VCAP_SERVICES is not set", func() {
 		BeforeEach(func() {
-			os.Setenv("VCAP_SERVICES", "")
+			os.Unsetenv("VCAP_SERVICES")
 		})
 
 		It("returns an error", func() {
@@ -70,6 +74,11 @@ var _ = Describe(".ServiceWithName", func() {
 	BeforeEach(func() {
 		os.Setenv("VCAP_SERVICES", vcapServices)
 	})
+
+	AfterEach(func() {
+		os.Unsetenv("VCAP_SERVICES")
+	})
+
 	Context("when the service is defined", func() {
 		It("does NOT return an error", func() {
 			_, err := env.ServiceWithName("service-name-2")
