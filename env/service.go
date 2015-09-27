@@ -1,4 +1,4 @@
-package service
+package env
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-const envVarName = "VCAP_SERVICES"
+const svcEnvVar = "VCAP_SERVICES"
 
 type Service struct {
 	Name        string                 `json:"name"`
@@ -17,38 +17,38 @@ type Service struct {
 	Credentials map[string]interface{} `json:"credentials"`
 }
 
-func WithTag(tag string) (Service, error) {
-	m, err := loadMap()
+func ServiceWithTag(tag string) (Service, error) {
+	services, err := getServices()
 	if err != nil {
 		return Service{}, err
 	}
 
-	return m.withTag(tag)
+	return services.withTag(tag)
 }
 
-func WithName(name string) (Service, error) {
-	m, err := loadMap()
+func ServiceWithName(name string) (Service, error) {
+	services, err := getServices()
 	if err != nil {
 		return Service{}, err
 	}
 
-	return m.withName(name)
+	return services.withName(name)
 }
 
 type serviceMap map[string][]Service
 
-func loadMap() (serviceMap, error) {
-	jsonStr := os.Getenv(envVarName)
+func getServices() (serviceMap, error) {
+	jsonStr := os.Getenv(svcEnvVar)
 	if jsonStr == "" {
-		return serviceMap{}, fmt.Errorf("%s not set", envVarName)
+		return serviceMap{}, fmt.Errorf("%s not set", svcEnvVar)
 	}
 
-	m := new(serviceMap)
-	if err := json.Unmarshal([]byte(jsonStr), m); err != nil {
-		return serviceMap{}, fmt.Errorf("Error parsing %s: %s", envVarName, err)
+	services := new(serviceMap)
+	if err := json.Unmarshal([]byte(jsonStr), services); err != nil {
+		return serviceMap{}, fmt.Errorf("Error parsing %s: %s", svcEnvVar, err)
 	}
 
-	return *m, nil
+	return *services, nil
 }
 
 func (m serviceMap) withTag(tag string) (Service, error) {

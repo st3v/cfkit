@@ -1,4 +1,4 @@
-package rabbitmq_test
+package env_test
 
 import (
 	. "github.com/onsi/ginkgo"
@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestRabbitmq(t *testing.T) {
+func TestEnv(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "RabbitMQ Suite")
+	RunSpecs(t, "Env Suite")
 }

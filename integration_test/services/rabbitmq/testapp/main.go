@@ -9,17 +9,17 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/st3v/cfkit/service/rabbitmq"
+	"github.com/st3v/cfkit/service"
 	"github.com/streadway/amqp"
 )
 
 const queueName = "testapp"
 
-var rabbit *rabbitmq.Svc
+var rabbit *service.RabbitMQ
 
 func main() {
 	var err error
-	if rabbit, err = rabbitmq.Service(); err != nil {
+	if rabbit, err = service.Rabbit(); err != nil {
 		log.Fatalf("Error getting RabbitMQ service: %s", err)
 	}
 

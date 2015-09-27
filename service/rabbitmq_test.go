@@ -1,4 +1,4 @@
-package rabbitmq
+package service
 
 import (
 	"errors"
@@ -6,22 +6,22 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
-	"github.com/st3v/cfkit/service"
+	"github.com/st3v/cfkit/env"
 	"github.com/streadway/amqp"
 )
 
-var _ = Describe(".Service", func() {
+var _ = Describe(".Rabbit", func() {
 	BeforeEach(func() {
 		os.Setenv("VCAP_SERVICES", vcapServices)
 	})
 
 	It("does not return an error", func() {
-		_, err := Service()
+		_, err := Rabbit()
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("correctly initializes the amqp URI", func() {
-		rabbit, _ := Service()
+		rabbit, _ := Rabbit()
 		Expect(rabbit.uri).To(Equal("amqp://username:password@127.0.0.1:5672/instance"))
 	})
 
@@ -31,31 +31,31 @@ var _ = Describe(".Service", func() {
 		})
 
 		It("returns an error", func() {
-			_, err := Service()
+			_, err := Rabbit()
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("not found"))
 		})
 	})
 })
 
-var _ = Describe(".ServiceWithTag", func() {
+var _ = Describe(".RabbitWithTag", func() {
 	BeforeEach(func() {
 		os.Setenv("VCAP_SERVICES", vcapServices)
 	})
 
 	It("does not return an error", func() {
-		_, err := ServiceWithTag("my-rabbit-tag")
+		_, err := RabbitWithTag("my-rabbit-tag")
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("correctly initializes the amqp URI", func() {
-		rabbit, _ := ServiceWithTag("my-rabbit-tag")
+		rabbit, _ := RabbitWithTag("my-rabbit-tag")
 		Expect(rabbit.URI()).To(Equal("amqp://my-rabbit"))
 	})
 
 	Context("when service is not found", func() {
 		It("returns an error", func() {
-			_, err := ServiceWithTag("unknown")
+			_, err := RabbitWithTag("unknown")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("not found"))
 		})
@@ -63,45 +63,45 @@ var _ = Describe(".ServiceWithTag", func() {
 
 	Context("when getting the URI fails", func() {
 		var (
-			origFn      = newFromService
+			origFn      = rabbitFromService
 			expectedErr = errors.New("expected")
 		)
 
 		BeforeEach(func() {
-			newFromService = func(s service.Service) (*Svc, error) {
+			rabbitFromService = func(s env.Service) (*RabbitMQ, error) {
 				return nil, expectedErr
 			}
 		})
 
 		AfterEach(func() {
-			newFromService = origFn
+			rabbitFromService = origFn
 		})
 
 		It("returns the epected error", func() {
-			_, err := ServiceWithTag("my-rabbit-tag")
+			_, err := RabbitWithTag("my-rabbit-tag")
 			Expect(err).To(Equal(expectedErr))
 		})
 	})
 })
 
-var _ = Describe(".ServiceWithName", func() {
+var _ = Describe(".RabbitWithName", func() {
 	BeforeEach(func() {
 		os.Setenv("VCAP_SERVICES", vcapServices)
 	})
 
 	It("does not return an error", func() {
-		_, err := ServiceWithName("my-rabbit-name")
+		_, err := RabbitWithName("my-rabbit-name")
 		Expect(err).ToNot(HaveOccurred())
 	})
 
 	It("correctly initializes the amqp URI", func() {
-		rabbit, _ := ServiceWithName("my-rabbit-name")
+		rabbit, _ := RabbitWithName("my-rabbit-name")
 		Expect(rabbit.URI()).To(Equal("amqp://my-rabbit"))
 	})
 
 	Context("when service is not found", func() {
 		It("returns an error", func() {
-			_, err := ServiceWithName("unknown")
+			_, err := RabbitWithName("unknown")
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("not found"))
 		})
@@ -109,22 +109,22 @@ var _ = Describe(".ServiceWithName", func() {
 
 	Context("when parsing the service credentials fails", func() {
 		var (
-			origFn      = newFromService
+			origFn      = rabbitFromService
 			expectedErr = errors.New("expected")
 		)
 
 		BeforeEach(func() {
-			newFromService = func(service.Service) (*Svc, error) {
+			rabbitFromService = func(env.Service) (*RabbitMQ, error) {
 				return nil, expectedErr
 			}
 		})
 
 		AfterEach(func() {
-			newFromService = origFn
+			rabbitFromService = origFn
 		})
 
 		It("returns the epected error", func() {
-			_, err := ServiceWithName("my-rabbit-name")
+			_, err := RabbitWithName("my-rabbit-name")
 			Expect(err).To(Equal(expectedErr))
 		})
 	})
@@ -134,7 +134,7 @@ var _ = Describe("rabbitmq", func() {
 	Describe("rabbit", func() {
 		Describe(".URI", func() {
 			It("returns the correct URI", func() {
-				r := &Svc{"uri"}
+				r := &RabbitMQ{"uri"}
 				Expect(r.URI()).To(Equal("uri"))
 			})
 		})
@@ -170,7 +170,7 @@ var _ = Describe("rabbitmq", func() {
 			})
 
 			JustBeforeEach(func() {
-				rabbit := &Svc{"amqp://rabbit.uri"}
+				rabbit := &RabbitMQ{"amqp://rabbit.uri"}
 				actualConn, actualErr = rabbit.Dial()
 			})
 
@@ -198,8 +198,8 @@ var _ = Describe("rabbitmq", func() {
 		})
 	})
 
-	Describe(".newFromService", func() {
-		var svc service.Service
+	Describe(".rabbitFromService", func() {
+		var svc env.Service
 
 		Context("when the service is labeled p-rabbitmq", func() {
 			BeforeEach(func() {
@@ -209,7 +209,7 @@ var _ = Describe("rabbitmq", func() {
 					},
 				}
 
-				svc = service.Service{
+				svc = env.Service{
 					Label: "p-rabbitmq",
 					Credentials: map[string]interface{}{
 						"protocols": protos,
@@ -218,12 +218,12 @@ var _ = Describe("rabbitmq", func() {
 			})
 
 			It("does not return an error", func() {
-				_, err := newFromService(svc)
+				_, err := rabbitFromService(svc)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("uses the correct URI", func() {
-				rabbit, _ := newFromService(svc)
+				rabbit, _ := rabbitFromService(svc)
 				Expect(rabbit.uri).To(Equal("amqp://uri"))
 			})
 
@@ -233,7 +233,7 @@ var _ = Describe("rabbitmq", func() {
 				})
 
 				It("returns expected error", func() {
-					_, err := newFromService(svc)
+					_, err := rabbitFromService(svc)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Invalid service credentials"))
 				})
@@ -247,7 +247,7 @@ var _ = Describe("rabbitmq", func() {
 				})
 
 				It("returns expected error", func() {
-					_, err := newFromService(svc)
+					_, err := rabbitFromService(svc)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Invalid service credentials"))
 				})
@@ -267,7 +267,7 @@ var _ = Describe("rabbitmq", func() {
 				})
 
 				It("returns expected error", func() {
-					_, err := newFromService(svc)
+					_, err := rabbitFromService(svc)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Invalid AMQP protocol credentials"))
 				})
@@ -285,7 +285,7 @@ var _ = Describe("rabbitmq", func() {
 				})
 
 				It("returns expected error", func() {
-					_, err := newFromService(svc)
+					_, err := rabbitFromService(svc)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Invalid AMQP protocol credentials"))
 				})
@@ -305,7 +305,7 @@ var _ = Describe("rabbitmq", func() {
 				})
 
 				It("returns expected error", func() {
-					_, err := newFromService(svc)
+					_, err := rabbitFromService(svc)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Invalid AMQP URI"))
 				})
@@ -325,7 +325,7 @@ var _ = Describe("rabbitmq", func() {
 				})
 
 				It("returns expected error", func() {
-					_, err := newFromService(svc)
+					_, err := rabbitFromService(svc)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Invalid AMQP URI"))
 				})
@@ -345,7 +345,7 @@ var _ = Describe("rabbitmq", func() {
 				})
 
 				It("returns expected error", func() {
-					_, err := newFromService(svc)
+					_, err := rabbitFromService(svc)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Invalid AMQP URI"))
 				})
@@ -354,7 +354,7 @@ var _ = Describe("rabbitmq", func() {
 
 		Context("when the service is NOT labeled p-rabbitmq", func() {
 			BeforeEach(func() {
-				svc = service.Service{
+				svc = env.Service{
 					Label: "cloudamqp",
 					Credentials: map[string]interface{}{
 						"uri": "amqp://uri",
@@ -363,12 +363,12 @@ var _ = Describe("rabbitmq", func() {
 			})
 
 			It("does not return an error", func() {
-				_, err := newFromService(svc)
+				_, err := rabbitFromService(svc)
 				Expect(err).ToNot(HaveOccurred())
 			})
 
 			It("uses the correct URI", func() {
-				rabbit, _ := newFromService(svc)
+				rabbit, _ := rabbitFromService(svc)
 				Expect(rabbit.uri).To(Equal("amqp://uri"))
 			})
 
@@ -378,7 +378,7 @@ var _ = Describe("rabbitmq", func() {
 				})
 
 				It("returns expected error", func() {
-					_, err := newFromService(svc)
+					_, err := rabbitFromService(svc)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Invalid AMQP URI"))
 				})
@@ -392,7 +392,7 @@ var _ = Describe("rabbitmq", func() {
 				})
 
 				It("returns expected error", func() {
-					_, err := newFromService(svc)
+					_, err := rabbitFromService(svc)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Invalid AMQP URI"))
 				})
@@ -406,7 +406,7 @@ var _ = Describe("rabbitmq", func() {
 				})
 
 				It("returns expected error", func() {
-					_, err := newFromService(svc)
+					_, err := rabbitFromService(svc)
 					Expect(err).To(HaveOccurred())
 					Expect(err.Error()).To(Equal("Invalid AMQP URI"))
 				})
