@@ -63,18 +63,18 @@ var _ = Describe(".RabbitWithTag", func() {
 
 	Context("when getting the URI fails", func() {
 		var (
-			origLift    = serviceLift
+			origLift    = rabbitLift
 			expectedErr = errors.New("expected")
 		)
 
 		BeforeEach(func() {
-			serviceLift = func(s env.Service) (*RabbitMQ, error) {
+			rabbitLift = func(s env.Service) (*RabbitMQ, error) {
 				return nil, expectedErr
 			}
 		})
 
 		AfterEach(func() {
-			serviceLift = origLift
+			rabbitLift = origLift
 		})
 
 		It("returns the epected error", func() {
@@ -109,18 +109,18 @@ var _ = Describe(".RabbitWithName", func() {
 
 	Context("when parsing the service credentials fails", func() {
 		var (
-			origLift    = serviceLift
+			origLift    = rabbitLift
 			expectedErr = errors.New("expected")
 		)
 
 		BeforeEach(func() {
-			serviceLift = func(s env.Service) (*RabbitMQ, error) {
+			rabbitLift = func(s env.Service) (*RabbitMQ, error) {
 				return nil, expectedErr
 			}
 		})
 
 		AfterEach(func() {
-			serviceLift = origLift
+			rabbitLift = origLift
 		})
 
 		It("returns the epected error", func() {

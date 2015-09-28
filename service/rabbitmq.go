@@ -8,7 +8,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
-const DefaultRabbitTag = "rabbitmq"
+var DefaultRabbitTag = "rabbitmq"
 
 var amqpDialer = amqp.Dial
 
@@ -29,12 +29,22 @@ func Rabbit() (*RabbitMQ, error) {
 }
 
 func RabbitWithTag(tag string) (*RabbitMQ, error) {
-	return find(env.ServiceWithTag, tag)
+	svc, err := env.ServiceWithTag(tag)
+	if err != nil {
+		return nil, err
+	}
+	return rabbitLift(svc)
 }
 
 func RabbitWithName(name string) (*RabbitMQ, error) {
-	return find(env.ServiceWithName, name)
+	svc, err := env.ServiceWithName(name)
+	if err != nil {
+		return nil, err
+	}
+	return rabbitLift(svc)
 }
+
+var rabbitLift = RabbitFromService
 
 func RabbitFromService(svc env.Service) (*RabbitMQ, error) {
 	uri, ok := svc.Credentials["uri"].(string)
@@ -42,16 +52,4 @@ func RabbitFromService(svc env.Service) (*RabbitMQ, error) {
 		return nil, errors.New("Invalid AMQP URI")
 	}
 	return &RabbitMQ{uri}, nil
-}
-
-var serviceLift = RabbitFromService
-
-type lookupFn func(string) (env.Service, error)
-
-func find(lookup lookupFn, id string) (*RabbitMQ, error) {
-	svc, err := lookup(id)
-	if err != nil {
-		return nil, err
-	}
-	return serviceLift(svc)
 }
