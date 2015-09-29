@@ -6,12 +6,41 @@
 	],
 	"Deps": [
 		{
+			"ImportPath": "code.google.com/p/gcfg",
+			"Rev": "c2d3050044d05357eaf6c3547249ba57c5e235cb"
+		},
+		{
+			"ImportPath": "github.com/cenkalti/backoff",
+			"Rev": "4dc77674aceaabba2c7e3da25d4c823edfb73f99"
+		},
+		{
+			"ImportPath": "github.com/clbanning/x2j",
+			"Rev": "0e45c2228aab9921ef50cc7d0bf7186082cc51a4"
+		},
+		{
+			"ImportPath": "github.com/franela/goreq",
+			"Rev": "72c51a544272e007ab3da4f7d9ac959b7af7af03"
+		},
+		{
 			"ImportPath": "github.com/gorilla/context",
 			"Rev": "1c83b3eabd45b6d76072b66b746c20815fb2872d"
 		},
 		{
 			"ImportPath": "github.com/gorilla/mux",
 			"Rev": "49c024275504f0341e5a9971eb7ba7fa3dc7af40"
+		},
+		{
+			"ImportPath": "github.com/hudl/fargo",
+			"Comment": "v1.0.0-38-gac37d05",
+			"Rev": "ac37d05152fd52c1ba88771c908d8f6e6f1f3404"
+		},
+		{
+			"ImportPath": "github.com/miekg/dns",
+			"Rev": "874ec871288a738d8d87fd5cec1dd71e88fdacb2"
+		},
+		{
+			"ImportPath": "github.com/mreiferson/go-httpclient",
+			"Rev": "c9572fd0dbbde9a1e0d5d331c7c08942197867c0"
 		},
 		{
 			"ImportPath": "github.com/onsi/ginkgo",
@@ -22,6 +51,10 @@
 			"ImportPath": "github.com/onsi/gomega",
 			"Comment": "v1.0-57-g52a4c33",
 			"Rev": "52a4c3399a2cf61ef1d0babd6591b8b3461e749d"
+		},
+		{
+			"ImportPath": "github.com/op/go-logging",
+			"Rev": "e8d5414f0947014548c2334044a0fac13187dfee"
 		},
 		{
 			"ImportPath": "github.com/streadway/amqp",
