@@ -56,6 +56,13 @@ func Application() (App, error) {
 	return app, nil
 }
 
+func (a *App) URI() string {
+	if len(a.URIs) == 0 {
+		return ""
+	}
+	return a.URIs[0]
+}
+
 func (a *App) UnmarshalJSON(data []byte) error {
 	type AppAlias App
 

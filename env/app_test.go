@@ -169,6 +169,30 @@ var _ = Describe(".Application", func() {
 	})
 })
 
+var _ = Describe("App", func() {
+	Describe(".URI", func() {
+		var app env.App
+
+		BeforeEach(func() {
+			app.URIs = []string{"uri1", "uri2", "uri3"}
+		})
+
+		It("returns the first URI from the list of URIs", func() {
+			Expect(app.URI()).To(Equal("uri1"))
+		})
+
+		Context("when the app does have an empty list of URIs", func() {
+			BeforeEach(func() {
+				app.URIs = []string{}
+			})
+
+			It("returns an empty string", func() {
+				Expect(app.URI()).To(Equal(""))
+			})
+		})
+	})
+})
+
 var vcapApplication = `
 {
   "application_id": "e16ad474-0e22-42d4-98c7-d41ed0eec123",
