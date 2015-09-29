@@ -13,7 +13,6 @@ var _ = Describe(".Application", func() {
 	Context("when all relevant env vars are set", func() {
 		BeforeEach(func() {
 			os.Setenv("VCAP_APPLICATION", vcapApplication)
-			os.Setenv("CF_INSTANCE_INDEX", "99")
 			os.Setenv("CF_INSTANCE_IP", "1.2.3.4")
 			os.Setenv("CF_INSTANCE_PORT", "12345")
 			os.Setenv("CF_INSTANCE_ADDR", "1.2.3.4:12345")
@@ -21,8 +20,7 @@ var _ = Describe(".Application", func() {
 
 		AfterEach(func() {
 			os.Unsetenv("VCAP_APPLICATION")
-			os.Unsetenv("CF_INSTANCE_INDEX")
-			os.Unsetenv("CF_INSTANCE_ID")
+			os.Unsetenv("CF_INSTANCE_IP")
 			os.Unsetenv("CF_INSTANCE_PORT")
 			os.Unsetenv("CF_INSTANCE_ADDR")
 		})
@@ -49,31 +47,11 @@ var _ = Describe(".Application", func() {
 			Expect(app.Space.Name).To(Equal("development"))
 			Expect(app.StartTimestamp).To(Equal(123456789))
 			Expect(app.StateTimestamp).To(Equal(987654321))
+			Expect(app.Instance.ID).To(Equal("3fc7db2dfa534d3cb6094f17fe6e12f5"))
 			Expect(app.Instance.Index).To(Equal(99))
 			Expect(app.Instance.IP).To(Equal("1.2.3.4"))
 			Expect(app.Instance.Port).To(Equal(12345))
 			Expect(app.Instance.Addr).To(Equal("1.2.3.4:12345"))
-		})
-	})
-
-	Context("when CF_INSTANCE_INDEX env var is not set", func() {
-		BeforeEach(func() {
-			os.Setenv("VCAP_APPLICATION", vcapApplication)
-			os.Unsetenv("CF_INSTANCE_INDEX")
-		})
-
-		AfterEach(func() {
-			os.Unsetenv("VCAP_APPLICATION")
-		})
-
-		It("does not return an error", func() {
-			_, err := env.Application()
-			Expect(err).ToNot(HaveOccurred())
-		})
-
-		It("sets instance index to zero", func() {
-			app, _ := env.Application()
-			Expect(app.Instance.Index).To(BeZero())
 		})
 	})
 
@@ -209,6 +187,8 @@ var vcapApplication = `
    "mem": 64
   },
   "name": "cfkit",
+  "instance_id": "3fc7db2dfa534d3cb6094f17fe6e12f5",
+  "instance_index": 99,
   "space_id": "cc35031c-b4af-4eea-9914-b25cc0db3888",
   "space_name": "development",
   "uris": [

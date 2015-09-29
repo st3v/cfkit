@@ -31,6 +31,7 @@ type AppLimits struct {
 }
 
 type AppInstance struct {
+	ID    string `json:"id"`
 	Index int    `json:"index"`
 	IP    string `json:"ip"`
 	Port  int    `json:"port"`
@@ -67,9 +68,11 @@ func (a *App) UnmarshalJSON(data []byte) error {
 	type AppAlias App
 
 	aux := &struct {
-		AppID     string `json:"application_id"`
-		SpaceID   string `json:"space_id"`
-		SpaceName string `json:"space_name"`
+		InstanceID    string `json:"instance_id"`
+		InstanceIndex int    `json:"instance_index"`
+		AppID         string `json:"application_id"`
+		SpaceID       string `json:"space_id"`
+		SpaceName     string `json:"space_name"`
 		*AppAlias
 	}{
 		AppAlias: (*AppAlias)(a),
@@ -82,27 +85,30 @@ func (a *App) UnmarshalJSON(data []byte) error {
 	a.ID = aux.AppID
 	a.Space.ID = aux.SpaceID
 	a.Space.Name = aux.SpaceName
-	a.Instance = appInstance()
 	a.Addr = fmt.Sprintf("%s:%d", aux.Host, aux.Port)
+	a.Instance = AppInstance{
+		ID:    aux.InstanceID,
+		Index: aux.InstanceIndex,
+		Port:  instancePort(),
+		IP:    instanceIP(),
+		Addr:  instanceAddr(),
+	}
 
 	return nil
 }
 
-func appInstance() AppInstance {
-	idx, err := strconv.Atoi(os.Getenv("CF_INSTANCE_INDEX"))
-	if err != nil {
-		idx = 0
-	}
-
+func instancePort() int {
 	port, err := strconv.Atoi(os.Getenv("CF_INSTANCE_PORT"))
 	if err != nil {
-		idx = 0
+		return 0
 	}
+	return port
+}
 
-	return AppInstance{
-		Index: idx,
-		IP:    os.Getenv("CF_INSTANCE_IP"),
-		Port:  port,
-		Addr:  os.Getenv("CF_INSTANCE_ADDR"),
-	}
+func instanceIP() string {
+	return os.Getenv("CF_INSTANCE_IP")
+}
+
+func instanceAddr() string {
+	return os.Getenv("CF_INSTANCE_ADDR")
 }
