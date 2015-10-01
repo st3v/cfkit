@@ -4,9 +4,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/hudl/fargo"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/st3v/cfkit/discovery/eureka"
 	"github.com/st3v/cfkit/env"
 )
 
@@ -21,7 +21,7 @@ var _ = Describe(".Eureka", func() {
 
 		lifted = env.Service{}
 
-		eurekaLift = func(svc env.Service) (*cfargo, error) {
+		eurekaLift = func(svc env.Service) (eureka.Client, error) {
 			lifted = svc
 			return origLift(svc)
 		}
@@ -65,7 +65,7 @@ var _ = Describe(".EurekaWithName", func() {
 
 		lifted = env.Service{}
 
-		eurekaLift = func(svc env.Service) (*cfargo, error) {
+		eurekaLift = func(svc env.Service) (eureka.Client, error) {
 			lifted = svc
 			return origLift(svc)
 		}
@@ -115,7 +115,7 @@ var _ = Describe(".EurekaWithTag", func() {
 
 		lifted = env.Service{}
 
-		eurekaLift = func(svc env.Service) (*cfargo, error) {
+		eurekaLift = func(svc env.Service) (eureka.Client, error) {
 			lifted = svc
 			return origLift(svc)
 		}
@@ -408,17 +408,17 @@ var _ = Describe(".EurekaFromService", func() {
 
 		It("uses the default port for the underlying connection", func() {
 			c, _ := EurekaFromService(svc)
-			Expect(c.conn.ServicePort).To(Equal(80))
+			Expect(c.Port()).To(Equal(80))
 		})
 
 		It("uses the default timeout for the underlying connection", func() {
 			c, _ := EurekaFromService(svc)
-			Expect(c.conn.Timeout).To(Equal(10 * time.Second))
+			Expect(c.Timeout()).To(Equal(10 * time.Second))
 		})
 
 		It("uses the default poll interval for the underlying connection", func() {
 			c, _ := EurekaFromService(svc)
-			Expect(c.conn.PollInterval).To(Equal(30 * time.Second))
+			Expect(c.PollInterval()).To(Equal(30 * time.Second))
 		})
 	})
 
@@ -434,46 +434,17 @@ var _ = Describe(".EurekaFromService", func() {
 
 		It("uses the specified port property for the underlying connection", func() {
 			c, _ := EurekaFromService(svc)
-			Expect(c.conn.ServicePort).To(Equal(12345))
+			Expect(c.Port()).To(Equal(12345))
 		})
 
 		It("uses the specified timeout for the underlying connection", func() {
 			c, _ := EurekaFromService(svc)
-			Expect(c.conn.Timeout).To(Equal(67 * time.Second))
+			Expect(c.Timeout()).To(Equal(67 * time.Second))
 		})
 
 		It("uses the specified poll_interval for the underlying connection", func() {
 			c, _ := EurekaFromService(svc)
-			Expect(c.conn.PollInterval).To(Equal(89 * time.Second))
-		})
-	})
-})
-
-var _ = Describe("cfargo", func() {
-	Describe(".URIs", func() {
-		var client *cfargo
-
-		BeforeEach(func() {
-			client = &cfargo{&fargo.EurekaConnection{
-				ServiceUrls: []string{"uri1", "uri2", "uri3"},
-			}}
-		})
-
-		It("returns the service URIs of the underlying connection", func() {
-			Expect(client.URIs()).To(HaveLen(3))
-			Expect(client.URIs()).To(ContainElement("uri1"))
-			Expect(client.URIs()).To(ContainElement("uri2"))
-			Expect(client.URIs()).To(ContainElement("uri3"))
-		})
-
-		Context("when the underlying connection is nil", func() {
-			BeforeEach(func() {
-				client = new(cfargo)
-			})
-
-			It("returns an empty slice", func() {
-				Expect(client.URIs()).To(HaveLen(0))
-			})
+			Expect(c.PollInterval()).To(Equal(89 * time.Second))
 		})
 	})
 })

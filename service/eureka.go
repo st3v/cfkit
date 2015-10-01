@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hudl/fargo"
+	"github.com/st3v/cfkit/discovery/eureka"
 	"github.com/st3v/cfkit/env"
 )
 
@@ -25,30 +25,11 @@ var (
 	DefaultEurekaPollIntervalPropertyKey = "poll_interval"
 )
 
-type EurekaClient interface {
-	URIs() []string
-	// Register() error
-	// Deregister() error
-	// SendHeartbeat() error
-	// Apps() ([]Application, error)
-	// App() (Application, error)
-}
-
-type Application struct {
-	Name      string
-	Instances []Instance
-}
-
-type Instance struct {
-	ID  string
-	URI string
-}
-
-func Eureka() (EurekaClient, error) {
+func Eureka() (eureka.Client, error) {
 	return EurekaWithName(DefaultEurekaServiceName)
 }
 
-func EurekaWithName(name string) (EurekaClient, error) {
+func EurekaWithName(name string) (eureka.Client, error) {
 	svc, err := env.ServiceWithName(name)
 	if err != nil {
 		return nil, err
@@ -56,7 +37,7 @@ func EurekaWithName(name string) (EurekaClient, error) {
 	return eurekaLift(svc)
 }
 
-func EurekaWithTag(tag string) (EurekaClient, error) {
+func EurekaWithTag(tag string) (eureka.Client, error) {
 	svc, err := env.ServiceWithTag(tag)
 	if err != nil {
 		return nil, err
@@ -66,7 +47,7 @@ func EurekaWithTag(tag string) (EurekaClient, error) {
 
 var eurekaLift = EurekaFromService
 
-func EurekaFromService(svc env.Service) (*cfargo, error) {
+func EurekaFromService(svc env.Service) (eureka.Client, error) {
 	uris, err := serviceURIs(svc)
 	if err != nil {
 		return nil, err
@@ -76,9 +57,7 @@ func EurekaFromService(svc env.Service) (*cfargo, error) {
 	timeout := eurekaTimeout(svc)
 	pollInterval := eurekaPollInterval(svc)
 
-	conn := fargoConn(uris, port, timeout, pollInterval)
-
-	return &cfargo{conn}, nil
+	return eureka.NewClient(uris, port, timeout, pollInterval), nil
 }
 
 func serviceURIs(svc env.Service) ([]string, error) {
@@ -154,44 +133,3 @@ func eurekaPollInterval(svc env.Service) time.Duration {
 	}
 	return DefaultEurekaPollInterval
 }
-
-func fargoConn(uris []string, port int, timeout, pollInterval time.Duration) *fargo.EurekaConnection {
-	return &fargo.EurekaConnection{
-		ServiceUrls:  uris,
-		ServicePort:  port,
-		PollInterval: pollInterval,
-		Timeout:      timeout,
-		UseJson:      true,
-	}
-}
-
-type cfargo struct {
-	conn *fargo.EurekaConnection
-}
-
-func (c *cfargo) URIs() []string {
-	if c.conn == nil {
-		return []string{}
-	}
-	return c.conn.ServiceUrls
-}
-
-// func (c *cfargo) Register() error {
-// 	return nil
-// }
-
-// func (c *cfargo) Deregister() error {
-// 	return nil
-// }
-
-// func (c *cfargo) SendHeartbeat() error {
-// 	return nil
-// }
-
-// func (c *cfargo) App() (Application, error) {
-// 	return Application{}, nil
-// }
-
-// func (c *cfargo) Apps() ([]Application, error) {
-// 	return []Application{}, nil
-// }
