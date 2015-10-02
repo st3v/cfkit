@@ -36,9 +36,9 @@ var _ = Describe("eureka", func() {
 		})
 	})
 
-	Describe("client", func() {
+	Describe("Client", func() {
 		var (
-			client *client
+			client *Client
 
 			fakeConn         *fake.FargoConnection
 			origConnProvider = fargoConn
@@ -175,6 +175,41 @@ var _ = Describe("eureka", func() {
 			})
 		})
 
+		Describe(".HeartbeatInterval", func() {
+			It("returns the default interval", func() {
+				Expect(client.HeartbeatInterval()).To(Equal(30 * time.Second))
+			})
+
+			Context("when the eureka server requires a different interval", func() {
+				var expectedInterval = 123 * time.Second
+
+				BeforeEach(func() {
+					fakeConn.RegisterInstanceStub = func(i *fargo.Instance) error {
+						i.LeaseInfo = fargo.LeaseInfo{
+							RenewalIntervalInSecs: int32(expectedInterval.Seconds()),
+						}
+						return nil
+					}
+				})
+
+				Context("and it is called prior to the first register", func() {
+					It("returns the default interval", func() {
+						Expect(client.HeartbeatInterval()).To(Equal(30 * time.Second))
+					})
+				})
+
+				Context("and it is called after the first register", func() {
+					BeforeEach(func() {
+						Expect(client.Register(app)).To(Succeed())
+					})
+
+					It("returns the interval set by the server", func() {
+						Expect(client.HeartbeatInterval()).To(Equal(expectedInterval))
+					})
+				})
+			})
+		})
+
 		Describe(".App", func() {
 			It("calls conn.GetApp with the correct app name", func() {
 				client.App("foo")
@@ -183,8 +218,8 @@ var _ = Describe("eureka", func() {
 			})
 
 			It("returns the app retrieved from conn.GetApp", func() {
-				app, _ := client.App("foo")
-				Expect(app.Name).To(Equal(fargoApp.Name))
+				uris, _ := client.App("foo")
+				Expect(uris).To(Equal([]string{app.URI()}))
 			})
 
 			Context("when conn.GetApp returns an error", func() {
@@ -212,8 +247,9 @@ var _ = Describe("eureka", func() {
 			It("returns the apps retrieved from conn.GetApps", func() {
 				apps, _ := client.Apps()
 				Expect(apps).To(HaveLen(len(fargoApps)))
-				for _, app := range apps {
-					Expect(app.Name).To(Equal(fargoApp.Name))
+				for name, uris := range apps {
+					Expect(name).To(Equal(app.Name))
+					Expect(uris).To(Equal([]string{app.URI()}))
 				}
 			})
 

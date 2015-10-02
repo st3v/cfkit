@@ -13,40 +13,30 @@ import (
 const (
 	appStdPort       = 80
 	appStdSecurePort = 443
+
+	defaultHeartbeatInterval = 30 * time.Second
 )
 
 var connProvider = fargoConn
 
-func NewClient(uris []string, port int, timeout, pollInterval time.Duration) *client {
-	return &client{
-		conn:         connProvider(uris, port, timeout, pollInterval),
-		uris:         uris,
-		port:         port,
-		timeout:      timeout,
-		pollInterval: pollInterval,
+func NewClient(uris []string, port int, timeout, pollInterval time.Duration) *Client {
+	return &Client{
+		conn:              connProvider(uris, port, timeout, pollInterval),
+		uris:              uris,
+		port:              port,
+		timeout:           timeout,
+		pollInterval:      pollInterval,
+		heartbeatInterval: defaultHeartbeatInterval,
 	}
 }
 
-type Client interface {
-	Register(app env.App) error
-	Deregister(app env.App) error
-	Heartbeat(app env.App) error
-	Apps() ([]Application, error)
-	App(name string) (Application, error)
-	URIs() []string
-	Port() int
-	Timeout() time.Duration
-	PollInterval() time.Duration
-}
-
-type Application struct {
-	Name      string
-	Instances []Instance
-}
-
-type Instance struct {
-	ID  string
-	URI string
+type Client struct {
+	conn              FargoConnection
+	uris              []string
+	port              int
+	timeout           time.Duration
+	pollInterval      time.Duration
+	heartbeatInterval time.Duration
 }
 
 type FargoConnection interface {
@@ -67,14 +57,6 @@ func fargoConn(uris []string, port int, timeout, pollInterval time.Duration) Far
 	}
 }
 
-type client struct {
-	conn         FargoConnection
-	uris         []string
-	port         int
-	timeout      time.Duration
-	pollInterval time.Duration
-}
-
 func fargoInstance(app env.App) *fargo.Instance {
 	return &fargo.Instance{
 		HostName:         app.URI(),
@@ -93,15 +75,22 @@ func fargoInstance(app env.App) *fargo.Instance {
 	}
 }
 
-func (c *client) Register(app env.App) error {
-	err := c.conn.RegisterInstance(fargoInstance(app))
+func (c *Client) Register(app env.App) error {
+	instance := fargoInstance(app)
+	err := c.conn.RegisterInstance(instance)
 	if err != nil {
 		return fmt.Errorf("Error registering app with Eureka: %s", err)
 	}
+
+	// assume all apps use the same renewal interval
+	if instance.LeaseInfo.RenewalIntervalInSecs > 0 {
+		c.heartbeatInterval = time.Duration(instance.LeaseInfo.RenewalIntervalInSecs) * time.Second
+	}
+
 	return nil
 }
 
-func (c *client) Deregister(app env.App) error {
+func (c *Client) Deregister(app env.App) error {
 	err := c.conn.DeregisterInstance(fargoInstance(app))
 	if err != nil {
 		return fmt.Errorf("Error deregistering app with Eureka: %s", err)
@@ -109,7 +98,7 @@ func (c *client) Deregister(app env.App) error {
 	return nil
 }
 
-func (c *client) Heartbeat(app env.App) error {
+func (c *Client) Heartbeat(app env.App) error {
 	err := c.conn.HeartBeatInstance(fargoInstance(app))
 	if err != nil {
 		return fmt.Errorf("Error sending heartbeat for app to Eureka: %s", err)
@@ -117,64 +106,56 @@ func (c *client) Heartbeat(app env.App) error {
 	return nil
 }
 
-func (c *client) Apps() ([]Application, error) {
+func (c *Client) HeartbeatInterval() time.Duration {
+	return c.heartbeatInterval
+}
+
+func (c *Client) Apps() (map[string][]string, error) {
 	apps, err := c.conn.GetApps()
 	if err != nil {
-		return []Application{}, fmt.Errorf("Error retrieving apps from Eureka: %s", err)
+		return map[string][]string{}, fmt.Errorf("Error retrieving apps from Eureka: %s", err)
 	}
 
-	result := []Application{}
+	result := map[string][]string{}
 	for _, app := range apps {
-		instances := make([]Instance, len(app.Instances))
+		uris := make([]string, len(app.Instances))
 
 		for i, inst := range app.Instances {
-			instances[i] = Instance{
-				ID:  inst.Id(),
-				URI: inst.VipAddress,
-			}
+			uris[i] = inst.HostName
 		}
 
-		result = append(result, Application{
-			Name:      app.Name,
-			Instances: instances,
-		})
+		result[app.Name] = uris
 	}
 
 	return result, nil
 }
 
-func (c *client) App(name string) (Application, error) {
+func (c *Client) App(name string) ([]string, error) {
 	app, err := c.conn.GetApp(name)
 	if err != nil {
-		return Application{}, fmt.Errorf("Error retrieving app '%s' from Eureka: %s", name, err)
+		return []string{}, fmt.Errorf("Error retrieving app '%s' from Eureka: %s", name, err)
 	}
 
-	instances := make([]Instance, len(app.Instances))
+	result := make([]string, len(app.Instances))
 	for i, inst := range app.Instances {
-		instances[i] = Instance{
-			ID:  inst.Id(),
-			URI: inst.VipAddress,
-		}
+		result[i] = inst.HostName
 	}
 
-	return Application{
-		Name:      app.Name,
-		Instances: instances,
-	}, nil
+	return result, nil
 }
 
-func (c *client) URIs() []string {
+func (c *Client) URIs() []string {
 	return c.uris
 }
 
-func (c *client) Port() int {
+func (c *Client) Port() int {
 	return c.port
 }
 
-func (c *client) Timeout() time.Duration {
+func (c *Client) Timeout() time.Duration {
 	return c.timeout
 }
 
-func (c *client) PollInterval() time.Duration {
+func (c *Client) PollInterval() time.Duration {
 	return c.pollInterval
 }

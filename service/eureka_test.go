@@ -21,7 +21,7 @@ var _ = Describe(".Eureka", func() {
 
 		lifted = env.Service{}
 
-		eurekaLift = func(svc env.Service) (eureka.Client, error) {
+		eurekaLift = func(svc env.Service) (*eureka.Client, error) {
 			lifted = svc
 			return origLift(svc)
 		}
@@ -65,7 +65,7 @@ var _ = Describe(".EurekaWithName", func() {
 
 		lifted = env.Service{}
 
-		eurekaLift = func(svc env.Service) (eureka.Client, error) {
+		eurekaLift = func(svc env.Service) (*eureka.Client, error) {
 			lifted = svc
 			return origLift(svc)
 		}
@@ -115,7 +115,7 @@ var _ = Describe(".EurekaWithTag", func() {
 
 		lifted = env.Service{}
 
-		eurekaLift = func(svc env.Service) (eureka.Client, error) {
+		eurekaLift = func(svc env.Service) (*eureka.Client, error) {
 			lifted = svc
 			return origLift(svc)
 		}

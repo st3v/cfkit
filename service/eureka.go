@@ -25,11 +25,11 @@ var (
 	DefaultEurekaPollIntervalPropertyKey = "poll_interval"
 )
 
-func Eureka() (eureka.Client, error) {
+func Eureka() (*eureka.Client, error) {
 	return EurekaWithName(DefaultEurekaServiceName)
 }
 
-func EurekaWithName(name string) (eureka.Client, error) {
+func EurekaWithName(name string) (*eureka.Client, error) {
 	svc, err := env.ServiceWithName(name)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func EurekaWithName(name string) (eureka.Client, error) {
 	return eurekaLift(svc)
 }
 
-func EurekaWithTag(tag string) (eureka.Client, error) {
+func EurekaWithTag(tag string) (*eureka.Client, error) {
 	svc, err := env.ServiceWithTag(tag)
 	if err != nil {
 		return nil, err
@@ -47,7 +47,7 @@ func EurekaWithTag(tag string) (eureka.Client, error) {
 
 var eurekaLift = EurekaFromService
 
-func EurekaFromService(svc env.Service) (eureka.Client, error) {
+func EurekaFromService(svc env.Service) (*eureka.Client, error) {
 	uris, err := serviceURIs(svc)
 	if err != nil {
 		return nil, err
